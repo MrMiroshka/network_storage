@@ -6,7 +6,13 @@
 
     <groupId>groupId</groupId>
     <artifactId>network_storage</artifactId>
+    <packaging>pom</packaging>
     <version>1.0</version>
+    <modules>
+        <module>hw3/common</module>
+        <module>hw3/server</module>
+        <module>hw3/client</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>1.11</maven.compiler.source>
