@@ -17,9 +17,10 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, Message message) throws Exception {
         System.out.println("msg = " + message);
         if (message.getCommand().equals("put")) {
-            Path root = Path.of("C:\\test\\hw\\hw3\\server\\user-dir");
+            //Path root = Path.of("C:\\test\\hw\\hw3\\server\\user-dir");
+            Path root = Path.of(message.getDir().replace("client","server"));
             Files.createDirectories(root);
-            Path file = root.resolve(message.getFile().getPath().replace("client","server"));
+            Path file = root.resolve(root+"\\"+message.getFile().getName());
             Files.createDirectories(file.getParent());
             try {
                 Files.createFile(file);
