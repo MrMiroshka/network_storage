@@ -12,6 +12,8 @@
         <module>hw3/common</module>
         <module>hw3/server</module>
         <module>hw3/client</module>
+        <module>hw5/clientNetty</module>
+        <module>hw5/serverNetty</module>
     </modules>
 
     <properties>
