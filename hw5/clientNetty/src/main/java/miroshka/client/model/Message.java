@@ -14,7 +14,8 @@ import lombok.NoArgsConstructor;
 public class Message {
  private Command command;
  private  String status;
- private String dirClinet;
+ private String dirClient;
+ private int id;
  private String file;
  private long length;
  private byte[] data;

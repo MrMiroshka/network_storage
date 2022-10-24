@@ -6,8 +6,8 @@ import miroshka.server.config.ConfigDownload;
 import miroshka.server.model.Command;
 import miroshka.server.model.Message;
 import io.netty.channel.Channel;
+import miroshka.server.network.Server;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
@@ -18,7 +18,7 @@ import java.nio.file.Paths;
 public class StorageLogic {
     public static void process(Message message, Channel channel) {
         if (message.getCommand().equals(Command.PUT)) {
-            String tempPathDir = "hw5\\servernetty\\dir\\".concat(!message.getDirClinet().isEmpty()?message.getDirClinet():"");
+            String tempPathDir = "hw5\\servernetty\\dir\\".concat(!message.getDirClient().isEmpty() ? message.getDirClient() : "");
             Path file = Path.of(tempPathDir, message.getFile());
             try {
                 Files.createDirectories(Paths.get(tempPathDir));
@@ -31,23 +31,23 @@ public class StorageLogic {
                 future.addListener(ChannelFutureListener.CLOSE);
                 return;
             }
-            try(FileOutputStream output = new FileOutputStream(file.toFile())){
+            try (FileOutputStream output = new FileOutputStream(file.toFile())) {
                 output.write(message.getData());
-            }catch (IOException e){
+            } catch (IOException e) {
                 ChannelFuture future = channel.writeAndFlush(
                         Message.builder().command(message.getCommand()).status("FILE ERROR").build()
                 );
                 future.addListener(ChannelFutureListener.CLOSE);
                 return;
-            }finally {
+            } finally {
                 channel.close();
             }
         }
 
         if (message.getCommand().equals(Command.GET)) {
-            Path file = Path.of("server",message.getFile());
-            try{
-                if(Files.exists(file) && Files.size(file) < ConfigDownload.MAXFILESIZE){
+            Path file = Path.of("server", message.getFile());
+            try {
+                if (Files.exists(file) && Files.size(file) < ConfigDownload.MAXFILESIZE) {
                     Message messageTemp = Message.builder()
                             .command(message.getCommand())
                             .file(file.getFileName().toString())
@@ -57,12 +57,44 @@ public class StorageLogic {
                             .build();
                     channel.writeAndFlush(messageTemp);
                 }
-            }catch (IOException e){
+            } catch (IOException e) {
                 ChannelFuture future = channel.writeAndFlush(
                         Message.builder().command(message.getCommand()).status("FILE ERROR").build()
                 );
                 future.addListener(ChannelFutureListener.CLOSE);
-            }finally {
+            } finally {
+                channel.close();
+            }
+
+        }
+
+        if (message.getCommand().equals(Command.GETUSER)) {
+
+            try {
+                int id;
+                if (message.getId() == 0) {
+                    id = Server.getIdUser();
+                } else {
+                    id = message.getId();
+                }
+                Message messageTemp = Message.builder()
+                        .command(message.getCommand())
+                        .status("OK")
+                        .id(id)
+                        .build();
+                //channel.writeAndFlush(messageTemp);
+
+                ChannelFuture future = channel.writeAndFlush(
+                        messageTemp
+                );
+                future.addListener(ChannelFutureListener.CLOSE);
+
+            } catch (Exception e) {
+                ChannelFuture future = channel.writeAndFlush(
+                        Message.builder().command(message.getCommand()).status("FILE ERROR").build()
+                );
+                future.addListener(ChannelFutureListener.CLOSE);
+            } finally {
                 channel.close();
             }
 

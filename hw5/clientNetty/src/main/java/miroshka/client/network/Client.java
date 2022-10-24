@@ -40,6 +40,7 @@ public class Client {
                     callback.accept(Message.builder().command(message.getCommand()).status("CONNECTION FAILED").build());
                 }
             });
+            future.channel().closeFuture().sync();
         }
         catch (InterruptedException e){
             throw  new RuntimeException(e);
