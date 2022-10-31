@@ -1,8 +1,7 @@
 package miroshka.client.config;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.util.Date;
 import java.util.Properties;
 
 public class ConfigDownload {
@@ -13,9 +12,25 @@ public class ConfigDownload {
     /**
      * Записыавет id клиента в конфигурационный файл, чтобы в следующий раз клиент уже знал свой id
      * и мог попасть в свою папку на сервере
+     *
      * @param id - уникальный идентификатор клиента
      */
-    public static void outIdToFile(int id){
+    public static void setIdToFile(int id) {
+
+        try  {
+            FileInputStream in = new FileInputStream("hw5/clientNetty/target/classes/application.properties");
+            Properties props = new Properties();
+            props.load(in);
+            in.close();
+
+            FileOutputStream out = new FileOutputStream("hw5/clientNetty/target/classes/application.properties");
+            props.setProperty("id", Integer.toString(id));
+            props.store(out, null);
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        /*
         try (InputStream input = ConfigDownload.class.getResourceAsStream("/application.properties")) {
             Properties props = new Properties();
             props.load(input);
@@ -27,8 +42,10 @@ public class ConfigDownload {
             out.close();
         } catch (IOException e) {
         throw new RuntimeException(e);
+
+         */
     }
-    }
+    //}
 
     static {
         try (InputStream input = ConfigDownload.class.getResourceAsStream("/application.properties")) {
@@ -37,13 +54,13 @@ public class ConfigDownload {
             HOST = properties.getProperty("host");
             if (properties.containsKey("port")) {
                 PORT = Integer.parseInt(properties.getProperty("port"));
-            }else{
+            } else {
                 //если не задан в свойствах то порт по умолчанию 2222
                 PORT = 2222;
             }
             if (properties.containsKey("id")) {
                 ID = Integer.parseInt(properties.getProperty("id"));
-            }else{
+            } else {
                 //если нет id в свойствах, то id = 0
                 ID = 0;
             }

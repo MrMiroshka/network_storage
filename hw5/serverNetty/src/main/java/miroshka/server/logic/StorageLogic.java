@@ -8,12 +8,16 @@ import miroshka.server.model.Message;
 import io.netty.channel.Channel;
 import miroshka.server.network.Server;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class StorageLogic {
     public static void process(Message message, Channel channel) {
@@ -45,7 +49,9 @@ public class StorageLogic {
         }
 
         if (message.getCommand().equals(Command.GET)) {
-            Path file = Path.of("server", message.getFile());
+            String tempPathDir = "hw5\\servernetty\\dir\\".concat(!message.getDirClient().isEmpty() ? message.getDirClient() : "");
+            Path file = Path.of(tempPathDir, message.getFile());
+
             try {
                 if (Files.exists(file) && Files.size(file) < ConfigDownload.MAXFILESIZE) {
                     Message messageTemp = Message.builder()
@@ -97,7 +103,89 @@ public class StorageLogic {
             } finally {
                 channel.close();
             }
+        }
+        if (message.getCommand().equals(Command.DEL)) {
+            String tempPathDir = "hw5\\servernetty\\dir\\".concat(!message.getDirClient().isEmpty() ? message.getDirClient() : "");
+            Path filePath = Path.of(tempPathDir, message.getName());
+            File file = new File(String.valueOf(filePath));
+            List<Path> directory = new ArrayList<Path>();
+            List<Path> files = new ArrayList<Path>();
+            try {
+                if (file.isDirectory()) {
+                    directory.add(filePath);
+                    processFilesFromFolder(file, directory, files);
+                    delFiles(files);
+                    delDir(directory);
+                } else {
+                    files.add(filePath);
+                    delFiles(files);
+                }
 
+                Message messageTemp = Message.builder()
+                        .command(message.getCommand())
+                        .name(message.getName())
+                        .dirClient(message.getDirClient())
+                        .status("OK")
+                        .build();
+                channel.writeAndFlush(messageTemp);
+
+            } catch (IOException e) {
+                ChannelFuture future = channel.writeAndFlush(
+                        Message.builder().command(message.getCommand()).status("FILE ERROR").build()
+                );
+                future.addListener(ChannelFutureListener.CLOSE);
+            } finally {
+                channel.close();
+            }
+
+        }
+    }
+
+    public static void processFilesFromFolder(File folder, List<Path> directory, List<Path> files) throws IOException {
+        File[] folderEntries = folder.listFiles();
+        for (File entry : folderEntries) {
+            if (entry.isDirectory()) {
+                directory.add(entry.toPath());
+                processFilesFromFolder(entry, directory, files);
+                continue;
+            }
+            files.addAll(getListFilesPath(entry.toPath()));
+        }
+    }
+
+    public static List<Path> getListFilesPath(Path file) throws IOException {
+        return Files.walk(file)
+                .filter(Files::isRegularFile)
+                .collect(Collectors.toList());
+    }
+
+    public static void delFiles(List<Path> listPathFiles) throws IOException {
+        for (Path p : listPathFiles) {
+            File file = new File(p.toString());
+            if (file.delete()) {
+                System.out.println(p + "файл удален");
+            } else {
+                System.out.println(p + " не обнаружено");
+                throw new IOException(p + " нет такого файла на сервере");
+            }
+
+        }
+    }
+
+    public static void delDir(List<Path> listDirectories) throws IOException {
+        for (int i = listDirectories.size()-1; i >= 0 ; i--) {
+
+        //}
+        //for (Path d : listDirectories) {
+            File fileDir = new File((listDirectories.get(i)).toString());
+            if (fileDir.isDirectory()) {
+                if (fileDir.delete()) {
+                    System.out.println(fileDir + " папка была удалена");
+                } else {
+                    System.out.println(fileDir + " папка не была удаленаа");
+                    throw new IOException(fileDir + " папка не пуста");
+                }
+            }
         }
     }
 }

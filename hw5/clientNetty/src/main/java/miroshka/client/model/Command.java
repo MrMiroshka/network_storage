@@ -1,5 +1,5 @@
 package miroshka.client.model;
 
 public enum Command {
-    PUT, GET, GETUSER
+    PUT, GET, GETUSER, DEL
 }

@@ -17,6 +17,7 @@ public class Message {
  private String dirClient;
  private int id;
  private String file;
+ private String name;
  private long length;
  private byte[] data;
 }
