@@ -1,7 +1,5 @@
 package miroshka.client;
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import miroshka.client.config.ConfigDownload;
 import miroshka.client.model.Command;
 import miroshka.client.model.Message;
@@ -13,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -28,20 +27,50 @@ public class Main {
         }
 
 
-
+        System.out.println("Ваш id = " + ConfigDownload.ID);
         String dirUser = whatDirSend(ConfigDownload.ID);
+        boolean exitFromApp = true;
+        while(exitFromApp){
+            System.out.println("Выберете действие, которое хотите выпорнить:");
+            System.out.println("'1' - передать файл на сервер");
+            System.out.println("'2' - удалить файл с сервера и клиента");
+            System.out.println("'3' - скачать файл с сервера");
+            System.out.println("'0' - Выход");
 
+            Scanner in = new Scanner(System.in);
+            String str = in.next();
+            int num;
+            try {
+                num = Integer.parseInt(str);
+            }catch (Exception e){
+                e.printStackTrace();
+                continue;
+            }
 
+            exitFromApp = mainLogigApp(num,dirUser);
 
-        //удаляем файл
-        del(whatFileDel(),dirUser);
-        //C:\java_proj\network_storage\hw5\clientNetty\dir\file.txt
+        }
+    }
 
-        //отправить файл на сервер
-        //File file = whatFileSend();
-        //put(file, dirUser);
+    private static boolean mainLogigApp(int vibor,String dirUser){
+        switch (vibor) {
+            case (1):
+                put(whatFileSend(), dirUser);
+                break;
+            case (2):
+                del(whatFileDel(),dirUser);
+                break;
+            case (3):
+                get(whatFileDownload(),dirUser);
+                break;
+            case (0):
+                return false;
+            default :
+                System.out.println("Значение введено не верно!");
+                break;
 
-
+        }
+        return true;
     }
 
     private static void put(File file, String dirUser) {
@@ -66,15 +95,19 @@ public class Main {
         }).start();
     }
 
-    private static void get() {
+    private static void get(String fileName,String dirClient) {
         new Thread(() -> {
             Message message = Message.builder()
                     .command(Command.GET)
-                    .file("file.txt")
+                    .dirClient(dirClient)
+                    .id(ConfigDownload.ID)
+                    .name(fileName)
                     .build();
             new Client().send(message, response -> {
-                Path file = Path.of("client", response.getFile());
+                Path file = Path.of(dirClient, response.getFile());
+
                 try {
+                    Files.createDirectories(Path.of(message.getDirClient()));
                     Files.createFile(file);
                 } catch (FileAlreadyExistsException ignore) {
 
@@ -89,6 +122,7 @@ public class Main {
             });
         }).start();
     }
+
 
     private static void del(File file, String dirUser) {
 
@@ -201,7 +235,6 @@ public class Main {
                         String filePath = sc.next();
                         file = new File(filePath);
                         if (file.exists() && !file.isDirectory()) {
-                            sc.close();
                             return filePath;
                         }
                     }
@@ -225,10 +258,16 @@ public class Main {
                 break;
             }
         }
-        sc.close();
         return file;
     }
 
+    private static String whatFileDownload() {
+        Scanner sc = new Scanner(System.in);
+        String fileName;
+        System.out.println("Введите имя файла, который хотите скачать:");
+        fileName = sc.nextLine();
+        return fileName;
+    }
 
     private static File whatFileDel() {
         Scanner sc = new Scanner(System.in);
@@ -236,13 +275,12 @@ public class Main {
         while (true) {
 
             System.out.println("Введите путь до файла или директории, который/ую хотите удалить:");
-            String filePath = sc.next();
+            String filePath = sc.nextLine();
             file = new File(filePath);
             if (file.exists()) {
                 break;
             }
         }
-        sc.close();
         return file;
     }
 }

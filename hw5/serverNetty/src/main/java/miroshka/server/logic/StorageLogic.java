@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 public class StorageLogic {
     public static void process(Message message, Channel channel) {
         if (message.getCommand().equals(Command.PUT)) {
-            String tempPathDir = "hw5\\servernetty\\dir\\".concat(!message.getDirClient().isEmpty() ? message.getDirClient() : "");
+            String tempPathDir = "hw5\\servernetty\\dir\\".concat(!message.getDirClient().isEmpty()&&message.getDirClient()!=null ? message.getDirClient() : "");
             Path file = Path.of(tempPathDir, message.getFile());
             try {
                 Files.createDirectories(Paths.get(tempPathDir));
@@ -49,10 +49,13 @@ public class StorageLogic {
         }
 
         if (message.getCommand().equals(Command.GET)) {
-            String tempPathDir = "hw5\\servernetty\\dir\\".concat(!message.getDirClient().isEmpty() ? message.getDirClient() : "");
-            Path file = Path.of(tempPathDir, message.getFile());
+            String tempPathDir = "hw5\\servernetty\\dir\\".concat(!message.getDirClient().isEmpty()&&message.getDirClient()!=null ? message.getDirClient() : "");
+            String s =findFile(message.getName(),tempPathDir);
+
 
             try {
+                if (s.isEmpty()){throw new IOException(message.getName() + " - файл не найден");}
+                Path file = Path.of(s);
                 if (Files.exists(file) && Files.size(file) < ConfigDownload.MAXFILESIZE) {
                     Message messageTemp = Message.builder()
                             .command(message.getCommand())
@@ -141,6 +144,29 @@ public class StorageLogic {
         }
     }
 
+    private static String findFile(String name,String dirClient) {
+
+        Path filePath = Path.of(dirClient, name);
+        File file = new File(dirClient);
+        List<Path> directory = new ArrayList<Path>();
+        List<Path> files = new ArrayList<Path>();
+        try {
+
+                directory.add(Path.of(dirClient));
+                processFilesFromFolder(file, directory, files);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        String pathFile;
+        for (Path f:files) {
+            if (f.getFileName().toString().equals(name)){
+                return f.toString();
+            }
+        }
+        return "";
+    }
+
     public static void processFilesFromFolder(File folder, List<Path> directory, List<Path> files) throws IOException {
         File[] folderEntries = folder.listFiles();
         for (File entry : folderEntries) {
@@ -173,10 +199,10 @@ public class StorageLogic {
     }
 
     public static void delDir(List<Path> listDirectories) throws IOException {
-        for (int i = listDirectories.size()-1; i >= 0 ; i--) {
+        for (int i = listDirectories.size() - 1; i >= 0; i--) {
 
-        //}
-        //for (Path d : listDirectories) {
+            //}
+            //for (Path d : listDirectories) {
             File fileDir = new File((listDirectories.get(i)).toString());
             if (fileDir.isDirectory()) {
                 if (fileDir.delete()) {
